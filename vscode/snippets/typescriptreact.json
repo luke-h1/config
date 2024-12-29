@@ -11,7 +11,7 @@
       "const $TM_FILENAME_BASE = ({$2}: ${TM_FILENAME_BASE}Props) => {",
       "\t\treturn ($3);",
       "}",
-      "export default $TM_FILENAME_BASE;",
+      "export default $TM_FILENAME_BASE;"
     ],
     "description": "Typescript React Function Component"
   }
