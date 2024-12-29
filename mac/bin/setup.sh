@@ -11,8 +11,8 @@ EMAIL=''
 GIT_NAME='luke-h1'
 GIT_EMAIL=''
 GITHUB_USER='luke-h1'
-ISSUES_URL='https://github.com/luke-h1/Automation/issues'
-IS_WORK=false
+ISSUES_URL='https://github.com/luke-h1/config/issues'
+WORK=false
 
 mkdir -p ~/.config && touch ~/.config/starship.toml
 
@@ -24,21 +24,39 @@ sudo_askpass() {
   fi
 }
 
-abort() { STEP="";   echo "!!! $*" >&2; exit 1; }
-log()   { STEP="$*"; sudo_refresh; echo "--> $*"; }
-logn()  { STEP="$*"; sudo_refresh; printf -- "--> %s " "$*"; }
-logk()  { STEP="";   echo "OK"; }
+abort() {
+  STEP=""
+  echo "!!! $*" >&2
+  exit 1
+}
+log() {
+  STEP="$*"
+  sudo_refresh
+  echo "--> $*"
+}
+logn() {
+  STEP="$*"
+  sudo_refresh
+  printf -- "--> %s " "$*"
+}
+logk() {
+  STEP=""
+  echo "OK"
+}
 escape() {
   printf '%s' "${1//\'/\'}"
 }
 
 sudo_refresh() {
+  # shellcheck disable=SC2317
   clear_debug
+  # shellcheck disable=SC2317
   if [ -n "$SUDO_ASKPASS" ]; then
     sudo --askpass --validate
   else
     sudo_init
   fi
+  # shellcheck disable=SC2317
   reset_debug
 }
 
@@ -46,7 +64,7 @@ trap "cleanup" EXIT
 
 if [ -n "$DEBUG" ]; then
   set -x
-else  
+else
   QUIET_FLAG="-q"
   Q="$QUIET_FLAG"
 fi
@@ -89,17 +107,21 @@ reset_debug() {
 
 # Initialise (or reinitialise) sudo to save unhelpful prompts later.
 sudo_init() {
+  # shellcheck disable=SC2317
   if [ -z "$INTERACTIVE" ]; then
     return
   fi
 
   # If TouchID for sudo is setup: use that instead.
+  # shellcheck disable=SC2317
   if grep -q pam_tid /etc/pam.d/sudo; then
     return
   fi
 
+  # shellcheck disable=SC2317
   local SUDO_PASSWORD SUDO_PASSWORD_SCRIPT
 
+  # shellcheck disable=SC2317
   if ! sudo --validate --non-interactive &>/dev/null; then
     while true; do
       read -rsp "--> Enter your password (for sudo access):" SUDO_PASSWORD
@@ -113,11 +135,12 @@ sudo_init() {
     done
 
     clear_debug
-    SUDO_PASSWORD_SCRIPT="$(cat <<BASH
+    SUDO_PASSWORD_SCRIPT="$(
+      cat <<BASH
 #!/bin/bash
 echo "$SUDO_PASSWORD"
 BASH
-)"
+    )"
     unset SUDO_PASSWORD
     SUDO_ASKPASS_DIR="$(mktemp -d)"
     SUDO_ASKPASS="$(mktemp "$SUDO_ASKPASS_DIR"/strap-askpass-XXXXXXXX)"
@@ -129,7 +152,6 @@ BASH
     export SUDO_ASKPASS
   fi
 }
-
 
 # Initialise (or reinitialise) sudo to save unhelpful prompts later.
 sudo_init() {
@@ -157,11 +179,12 @@ sudo_init() {
     done
 
     clear_debug
-    SUDO_PASSWORD_SCRIPT="$(cat <<BASH
+    SUDO_PASSWORD_SCRIPT="$(
+      cat <<BASH
 #!/bin/bash
 echo "$SUDO_PASSWORD"
 BASH
-)"
+    )"
     unset SUDO_PASSWORD
     SUDO_ASKPASS_DIR="$(mktemp -d)"
     SUDO_ASKPASS="$(mktemp "$SUDO_ASKPASS_DIR"/strap-askpass-XXXXXXXX)"
@@ -185,6 +208,7 @@ sudo_refresh() {
 }
 
 [ "$USER" = "root" ] && abort "Run Strap as yourself, not root."
+# shellcheck disable=SC2086
 groups | grep $Q -E "\b(admin)\b" || abort "Add $USER to the admin group."
 
 # Prevent sleeping during script execution, as long as the machine is on AC power
@@ -211,8 +235,9 @@ if [ "$WORK" != true ]; then
       LoginwindowText \
       "$LOGIN_TEXT"
   fi
-# Check and enable full-disk encryption.
+  # Check and enable full-disk encryption.
   logn "Checking full-disk encryption status:"
+  # shellcheck disable=SC2086
   if fdesetup status | grep $Q -E "FileVault is (On|Off, but will be enabled after the next restart)."; then
     logk
   elif [ -n "$CI" ]; then
@@ -220,8 +245,8 @@ if [ "$WORK" != true ]; then
   elif [ -n "$INTERACTIVE" ]; then
     echo
     log "Enabling full-disk encryption on next reboot:"
-    sudo_askpass fdesetup enable -user "$USER" \
-      | tee ~/Desktop/"FileVault Recovery Key.txt"
+    sudo_askpass fdesetup enable -user "$USER" |
+      tee ~/Desktop/"FileVault Recovery Key.txt"
     logk
   else
     echo
@@ -233,25 +258,21 @@ else
   log "Security settings configuration is disabled for work."
 fi
 
-
-
 # Install the Xcode Command Line Tools.
-if ! [ -f "/Library/Developer/CommandLineTools/usr/bin/git" ]
-then
+if ! [ -f "/Library/Developer/CommandLineTools/usr/bin/git" ]; then
   log "Installing the Xcode Command Line Tools:"
   CLT_PLACEHOLDER="/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress"
   sudo_askpass touch "$CLT_PLACEHOLDER"
 
-  CLT_PACKAGE=$(softwareupdate -l | \
-                grep -B 1 "Command Line Tools" | \
-                awk -F"*" '/^ *\*/ {print $2}' | \
-                sed -e 's/^ *Label: //' -e 's/^ *//' | \
-                sort -V |
-                tail -n1)
+  CLT_PACKAGE=$(softwareupdate -l |
+    grep -B 1 "Command Line Tools" |
+    awk -F"*" '/^ *\*/ {print $2}' |
+    sed -e 's/^ *Label: //' -e 's/^ *//' |
+    sort -V |
+    tail -n1)
   sudo_askpass softwareupdate -i "$CLT_PACKAGE"
   sudo_askpass rm -f "$CLT_PLACEHOLDER"
-  if ! [ -f "/Library/Developer/CommandLineTools/usr/bin/git" ]
-  then
+  if ! [ -f "/Library/Developer/CommandLineTools/usr/bin/git" ]; then
     if [ -n "$INTERACTIVE" ]; then
       echo
       logn "Requesting user install of Xcode Command Line Tools:"
@@ -266,7 +287,7 @@ fi
 
 # Check if the Xcode license is agreed to and agree if not.
 xcode_license() {
-  if /usr/bin/xcrun clang 2>&1 | grep $Q license; then
+  if /usr/bin/xcrun clang 2>&1 | grep "$Q" license; then
     if [ -n "$INTERACTIVE" ]; then
       logn "Asking for Xcode license confirmation:"
       sudo_askpass xcodebuild -license
@@ -277,7 +298,6 @@ xcode_license() {
   fi
 }
 xcode_license
-
 
 # Setup Git configuration.
 logn "Configuring Git:"
@@ -308,31 +328,29 @@ if [ -z "$HOMEBREW_PREFIX" ] || [ -z "$HOMEBREW_REPOSITORY" ]; then
   fi
 fi
 [ -d "$HOMEBREW_PREFIX" ] || sudo_askpass mkdir -p "$HOMEBREW_PREFIX"
-if [ "$HOMEBREW_PREFIX" = "/usr/local" ]
-then
+if [ "$HOMEBREW_PREFIX" = "/usr/local" ]; then
   sudo_askpass chown "root:wheel" "$HOMEBREW_PREFIX" 2>/dev/null || true
 fi
 (
   cd "$HOMEBREW_PREFIX"
-  sudo_askpass mkdir -p               Cellar Caskroom Frameworks bin etc include lib opt sbin share var
-  sudo_askpass chown    "$USER:admin" Cellar Caskroom Frameworks bin etc include lib opt sbin share var
+  sudo_askpass mkdir -p Cellar Caskroom Frameworks bin etc include lib opt sbin share var
+  sudo_askpass chown "$USER:admin" Cellar Caskroom Frameworks bin etc include lib opt sbin share var
 )
 
 [ -d "$HOMEBREW_REPOSITORY" ] || sudo_askpass mkdir -p "$HOMEBREW_REPOSITORY"
 sudo_askpass chown -R "$USER:admin" "$HOMEBREW_REPOSITORY"
 
-if [ $HOMEBREW_PREFIX != $HOMEBREW_REPOSITORY ]
-then
+if [ "$HOMEBREW_PREFIX" != "$HOMEBREW_REPOSITORY" ]; then
   ln -sf "$HOMEBREW_REPOSITORY/bin/brew" "$HOMEBREW_PREFIX/bin/brew"
 fi
 
 # Download Homebrew.
 export GIT_DIR="$HOMEBREW_REPOSITORY/.git" GIT_WORK_TREE="$HOMEBREW_REPOSITORY"
-git init $Q
+git init "$Q"
 git config remote.origin.url "https://github.com/Homebrew/brew"
 git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
-git fetch $Q --tags --force
-git reset $Q --hard origin/master
+git fetch "$Q" --tags --force
+git reset "$Q" --hard origin/master
 unset GIT_DIR GIT_WORK_TREE
 logk
 
@@ -354,7 +372,7 @@ logk
 # Check and install any remaining software updates.
 if [ "$WORK" != true ]; then
   logn "Checking for software updates:"
-  if softwareupdate -l 2>&1 | grep $Q "No new software available."; then
+  if softwareupdate -l 2>&1 | grep "$Q" "No new software available."; then
     logk
   else
     echo
@@ -396,11 +414,12 @@ echo "Would you like to set your hostname / computer (as done via System Prefere
 read -r response
 if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]; then
   echo "What would you like it to be?"
-  read HOSTNAME 
-  sudo scutil --set ComputerName $HOSTNAME
-  sudo scutil --set HostName $HOSTNAME
-  sudo scutil --set LocalHostName $HOSTNAME
-  sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string $HOSTNAME
+  # shellcheck disable=SC2162
+  read HOSTNAME
+  sudo scutil --set ComputerName "$HOSTNAME"
+  sudo scutil --set HostName "$HOSTNAME"
+  sudo scutil --set LocalHostName "$HOSTNAME"
+  sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$HOSTNAME"
 fi
 
 echo "Turn off keyboard illumination when computer is not used for 5 minutes"
@@ -413,15 +432,14 @@ if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]; then
 fi
 echo "Where do you want screenshots to be stored? (hit ENTER if you want ~/Desktop as default)"
 # Thanks https://github.com/omgmog
+# shellcheck disable=SC2162
 read screenshot_location
-if [ -z "${screenshot_location}" ]
-then
+if [ -z "${screenshot_location}" ]; then
   # If nothing specified, we default to ~/Desktop
   screenshot_location="${HOME}/Desktop"
 else
   # Otherwise we use input
-  if [[ "${screenshot_location:0:1}" != "/" ]]
-  then
+  if [[ "${screenshot_location:0:1}" != "/" ]]; then
     # If input doesn't start with /, assume it's relative to home
     screenshot_location="${HOME}/${screenshot_location}"
   fi
@@ -445,8 +463,7 @@ defaults write com.apple.finder ShowHardDrivesOnDesktop -bool false
 defaults write com.apple.finder ShowMountedServersOnDesktop -bool false
 defaults write com.apple.finder ShowRemovableMediaOnDesktop -bool false
 
-
-echo "Safari section" 
+echo "Safari section"
 # Warn about fraudulent websites
 defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true
 
@@ -471,7 +488,7 @@ defaults write com.apple.Safari FindOnPageMatchesWordStartsOnly -bool false
 
 echo "Removing useless icons from Safari's bookmarks bar"
 defaults write com.apple.Safari ProxiesInBookmarksBar "()"
- 
+
 defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
 
 # UI CONFIG
@@ -493,10 +510,10 @@ defaults write com.apple.dock springboard-show-duration -float 0.1
 defaults write com.apple.dock springboard-hide-duration -float 0.11
 defaults write com.apple.dock springboard-page-duration -float 0.1
 
-echo "Always show scrollbars"  
+echo "Always show scrollbars"
 defaults write NSGlobalDomain AppleShowScrollBars -string "Always"
 
-echo "Quit printer app once print jobs have finished" 
+echo "Quit printer app once print jobs have finished"
 defaults write com.apple.print.PrintingPrefs "Quit When Finished" -bool true
 
 echo "require password immediately after sleep or screen saver"
@@ -575,8 +592,8 @@ pip install --upgrade pip
 brew install pyenv
 pyenv install 3.10.0
 pyenv global 3.10.0
-brew update 
-brew upgrade 
+brew update
+brew upgrade
 brew install node
 brew link node
 brew update && brew install nvm
@@ -585,7 +602,8 @@ mkdir /Users/lukehowsam/.nvm
 brew tap homebrew/cask-fonts && brew install --cask font-fira-code-nerd-font
 
 curl -fsSL https://get.pnpm.io/install.sh | sh -
-sudo chown -R $USER:$(id -gn $USER) /Users/$USER/.config 
+# shellcheck disable=SC2046
+sudo chown -R "$USER":$(id -gn "$USER") /Users/"$USER"/.config
 npm i -g vercel lite-server expo-cli typescript
 sudo gem install cocoapods
 sudo xcodebuild -license accept
@@ -594,24 +612,24 @@ find ~/Library/Application\ Support/Dock -name "*.db" -maxdepth 1 -delete
 for app in "Activity Monitor" "Address Book" "Calendar" "Contacts" "cfprefsd" \
   "Dock" "Finder" "Mail" "Messages" "Safari" "SystemUIServer" \
   "Transmission"; do
-  killall "${app}" > /dev/null 2>&1
-done 
+  killall "${app}" >/dev/null 2>&1
+done
 SUCCESS="1"
 log "✅ System is now Bootstrapped! ✅"
 
-log "❌---------------------------------------❌" 
-log "remember to setup manually:" 
+log "❌---------------------------------------❌"
+log "remember to setup manually:"
 log "macs fan control"
 log "stealth-mode mac setting"
 log "PIA client"
 log "Amphetamine"
 log "Android studio"
 log "Docker"
-log "vscode extensions" 
+log "vscode extensions"
 log "libmagic"
-log "❌---------------------------------------❌" 
+log "❌---------------------------------------❌"
 
-cat << EOF >> ~/.zprofile
+cat <<EOF >>~/.zprofile
 # Add Visual Studio Code (code)
 export PATH="\$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
 EOF

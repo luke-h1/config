@@ -25,14 +25,14 @@ sudo dokku plugin:install https://github.com/dokku/dokku-redis.git
 sudo dokku redis:create redis
 dokku redis:link redis api
 dokku plugin:install https://github.com/dokku/dokku-letsencrypt
-dokku config:set --no-restart api DOKKU_LETSENCRYPT_EMAIL=<email>
+dokku config:set --no-restart api DOKKU_LETSENCRYPT_EMAIL=your@email.com
 sudo su -
 hostnamectl set-hostname dev
 sudo su - ubuntu
 dokku domains:remove-global dev
 dokku domains:remove api dev
 sudo dokku domains:report
-sudo dokku domains:add api <api domain name>
+sudo dokku domains:add api api.domain.name
 dokku proxy:ports-add api http:80:4010
 echo "Sleeping for 30 seconds to give you time to update DNS config"
 dokku letsencrypt:enable api
