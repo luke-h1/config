@@ -32,4 +32,4 @@ EOF
 chmod +x /Users/lukehowsam/srv/dev/config/mac/sync.sh
 
 # Add the sync.sh script to cron to run every day at 12:00 PM
-(crontab -l 2>/dev/null; echo "0 12 * * * /Users/lukehowsam/srv/dev/config/mac/sync.sh >> /Users/lukehowsam/srv/dev/config/mac/sync.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "0 12 * * * /Users/lukehowsam/srv/dev/config/mac/sync.sh >> /Users/lukehowsam/sync.log 2>&1") | crontab -
