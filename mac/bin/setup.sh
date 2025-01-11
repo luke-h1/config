@@ -607,6 +607,8 @@ sudo chown -R "$USER":$(id -gn "$USER") /Users/"$USER"/.config
 npm i -g vercel lite-server expo-cli typescript
 sudo gem install cocoapods
 sudo xcodebuild -license accept
+brew tap weaveworks/tap
+brew install weaveworks/tap/eksctl
 
 find ~/Library/Application\ Support/Dock -name "*.db" -maxdepth 1 -delete
 for app in "Activity Monitor" "Address Book" "Calendar" "Contacts" "cfprefsd" \
