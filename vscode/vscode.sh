@@ -22,3 +22,4 @@ code --install-extension eamodio.gitlens
 code --install-extension Gruntfuggly.todo-tree
 code --install-extension vscode-icons-team.vscode-icons
 code --install-extension Vue.volar
+code --install-extension expo.vscode-expo-tools
