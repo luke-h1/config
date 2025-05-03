@@ -265,7 +265,6 @@ compdef _git gm=git-merge
 alias grh='git reset HEAD'
 alias grhh='git reset HEAD --hard'
 alias branches="git branch -r | xargs -L1 git --no-pager show -s --oneline --author="$(git config user.name)""
-
 # Git and svn mix
 alias git-svn-dcommit-push='git svn dcommit && git push github master:svntrunk'
 compdef git-svn-dcommit-push=git
@@ -317,4 +316,4 @@ complete -o nospace -C /usr/local/bin/terragrunt terragrunt
 fpath=(/Users/lukehowsam/.docker/completions $fpath)
 autoload -Uz compinit
 compinit
-# End of Docker CLI completions
+
