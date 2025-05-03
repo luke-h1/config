@@ -36,6 +36,7 @@ alias studio="open -a 'Android Studio.app'"
 alias code="open -a 'Visual Studio Code.app'"
 alias ws="open -a 'WebStorm.app'"
 
+
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
 # a theme from this variable instead of looking in $ZSH/themes/
@@ -292,3 +293,27 @@ alias ggpush='git push origin $(current_branch)'
 compdef ggpush=git
 alias ggpnp='git pull origin $(current_branch) && git push origin $(current_branch)'
 compdef ggpnp=git
+alias dockerstop="ps ax|grep -i docker|egrep -iv 'grep|com.docker.vmnetd'|awk '{print $1}'|xargs kill"
+
+
+
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+# bun completions
+[ -s "/Users/lukehowsam/.bun/_bun" ] && source "/Users/lukehowsam/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+export PATH="$PATH:/Applications/Docker.app/Contents/Resources/bin/"
+autoload -U +X bashcompinit && bashcompinit
+complete -o nospace -C /usr/local/bin/terragrunt terragrunt
+# The following lines have been added by Docker Desktop to enable Docker CLI completions.
+fpath=(/Users/lukehowsam/.docker/completions $fpath)
+autoload -Uz compinit
+compinit
+
