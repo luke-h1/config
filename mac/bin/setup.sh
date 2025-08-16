@@ -621,6 +621,7 @@ log "✅ System is now Bootstrapped! ✅"
 
 log "❌---------------------------------------❌"
 log "remember to setup manually:"
+log "https://www.dbvis.com/"
 log "macs fan control"
 log "stealth-mode mac setting"
 log "PIA client"
