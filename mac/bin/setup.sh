@@ -631,6 +631,8 @@ log "disk drill"
 log "Docker"
 log "vscode extensions"
 log "libmagic"
+log "royaltsx"
+log "dart"
 log "❌---------------------------------------❌"
 
 cat <<EOF >>~/.zprofile

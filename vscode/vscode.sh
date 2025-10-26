@@ -23,3 +23,9 @@ code --install-extension Gruntfuggly.todo-tree
 code --install-extension vscode-icons-team.vscode-icons
 code --install-extension Vue.volar
 code --install-extension expo.vscode-expo-tools
+code --install-extension sswg.swift-lang
+code --install-extension redhat.java
+code --install-extension astro-build.astro-vscode
+code --install-extension Dart-Code.dart-code
+code --install-extension hashicorp.terraform
+code --install-extension antfu.slidev
