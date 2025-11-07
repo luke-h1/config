@@ -29,3 +29,4 @@ code --install-extension astro-build.astro-vscode
 code --install-extension Dart-Code.dart-code
 code --install-extension hashicorp.terraform
 code --install-extension antfu.slidev
+code --install-extension blazejkustra.react-compiler-marker
