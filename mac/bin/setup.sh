@@ -609,6 +609,7 @@ log "vscode extensions"
 log "libmagic"
 log "royaltsx"
 log "dart"
+log "1password"
 log "❌---------------------------------------❌"
 
 cat <<EOF >>~/.zprofile
