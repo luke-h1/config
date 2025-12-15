@@ -264,13 +264,13 @@ if ! [ -f "/Library/Developer/CommandLineTools/usr/bin/git" ]; then
   CLT_PLACEHOLDER="/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress"
   sudo_askpass touch "$CLT_PLACEHOLDER"
 
-  CLT_PACKAGE=$(softwareupdate -l |
-    grep -B 1 "Command Line Tools" |
-    awk -F"*" '/^ *\*/ {print $2}' |
-    sed -e 's/^ *Label: //' -e 's/^ *//' |
-    sort -V |
-    tail -n1)
-  sudo_askpass softwareupdate -i "$CLT_PACKAGE"
+  # CLT_PACKAGE=$(softwareupdate -l |
+  #   grep -B 1 "Command Line Tools" |
+  #   awk -F"*" '/^ *\*/ {print $2}' |
+  #   sed -e 's/^ *Label: //' -e 's/^ *//' |
+  #   sort -V |
+  #   tail -n1)
+  # sudo_askpass softwareupdate -i "$CLT_PACKAGE"
   sudo_askpass rm -f "$CLT_PLACEHOLDER"
   if ! [ -f "/Library/Developer/CommandLineTools/usr/bin/git" ]; then
     if [ -n "$INTERACTIVE" ]; then
@@ -363,31 +363,8 @@ logk
 # Install Homebrew Bundle, Cask and Services tap.
 log "Installing Homebrew taps and extensions:"
 brew bundle --quiet --file=- <<RUBY
-tap "homebrew/cask"
-tap "homebrew/core"
-tap "homebrew/services"
 RUBY
 logk
-
-# Check and install any remaining software updates.
-if [ "$WORK" != true ]; then
-  logn "Checking for software updates:"
-  if softwareupdate -l 2>&1 | grep "$Q" "No new software available."; then
-    logk
-  else
-    echo
-    log "Installing software updates:"
-    if [ -z "$CI" ]; then
-      sudo_askpass softwareupdate --install --all
-      xcode_license
-      logk
-    else
-      echo "SKIPPED (for CI)"
-    fi
-  fi
-else
-  log "Software update check is disabled for work."
-fi
 
 # Avoid creating .DS_Store files on network or USB volumes
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
@@ -463,31 +440,31 @@ defaults write com.apple.finder ShowHardDrivesOnDesktop -bool false
 defaults write com.apple.finder ShowMountedServersOnDesktop -bool false
 defaults write com.apple.finder ShowRemovableMediaOnDesktop -bool false
 
-echo "Safari section"
-# Warn about fraudulent websites
-defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true
+# echo "Safari section"
+# # Warn about fraudulent websites
+# defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true
 
-echo "Privacy: Don't send search queries to Apple"
-defaults write com.apple.Safari UniversalSearchEnabled -bool false
-defaults write com.apple.Safari SuppressSearchSuggestions -bool true
+# echo "Privacy: Don't send search queries to Apple"
+# defaults write com.apple.Safari UniversalSearchEnabled -bool false
+# defaults write com.apple.Safari SuppressSearchSuggestions -bool true
 
-echo "Hiding Safari's bookmarks bar by default"
-defaults write com.apple.Safari ShowFavoritesBar -bool false
+# echo "Hiding Safari's bookmarks bar by default"
+# defaults write com.apple.Safari ShowFavoritesBar -bool false
 
-echo "Hiding Safari's sidebar in Top Sites"
-defaults write com.apple.Safari ShowSidebarInTopSites -bool false
+# echo "Hiding Safari's sidebar in Top Sites"
+# defaults write com.apple.Safari ShowSidebarInTopSites -bool false
 
-echo "Disabling Safari's thumbnail cache for History and Top Sites"
-defaults write com.apple.Safari DebugSnapshotsUpdatePolicy -int 2
+# echo "Disabling Safari's thumbnail cache for History and Top Sites"
+# defaults write com.apple.Safari DebugSnapshotsUpdatePolicy -int 2
 
-echo "Enabling Safari's debug menu"
-defaults write com.apple.Safari IncludeInternalDebugMenu -bool true
+# echo "Enabling Safari's debug menu"
+# defaults write com.apple.Safari IncludeInternalDebugMenu -bool true
 
-echo "Making Safari's search banners default to Contains instead of Starts With"
-defaults write com.apple.Safari FindOnPageMatchesWordStartsOnly -bool false
+# echo "Making Safari's search banners default to Contains instead of Starts With"
+# defaults write com.apple.Safari FindOnPageMatchesWordStartsOnly -bool false
 
-echo "Removing useless icons from Safari's bookmarks bar"
-defaults write com.apple.Safari ProxiesInBookmarksBar "()"
+# echo "Removing useless icons from Safari's bookmarks bar"
+# defaults write com.apple.Safari ProxiesInBookmarksBar "()"
 
 defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
 
@@ -581,7 +558,6 @@ else
   log "Transmission setup is disabled for work."
 fi
 
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 brew update
 brew upgrade
 # brew bundle
@@ -590,18 +566,16 @@ python3 get-pip.py
 pip3 install pipenv
 pip install --upgrade pip
 brew install pyenv
+brew install tw93/tap/mole
 pyenv install 3.10.0
 pyenv global 3.10.0
 brew update
 brew upgrade
 brew install node
 brew link node
-brew update && brew install nvm
-mkdir /Users/lukehowsam/.nvm
+brew install fnm
 
-brew tap homebrew/cask-fonts && brew install --cask font-fira-code-nerd-font
 
-curl -fsSL https://get.pnpm.io/install.sh | sh -
 # shellcheck disable=SC2046
 sudo chown -R "$USER":$(id -gn "$USER") /Users/"$USER"/.config
 npm i -g vercel lite-server expo-cli typescript
@@ -619,15 +593,17 @@ done
 SUCCESS="1"
 log "✅ System is now Bootstrapped! ✅"
 
+
 log "❌---------------------------------------❌"
 log "remember to setup manually:"
 log "https://www.dbvis.com/"
+log "tg pro"
+log "java"
 log "macs fan control"
 log "stealth-mode mac setting"
 log "PIA client"
 log "Amphetamine"
 log "Android studio"
-log "disk drill"
 log "Docker"
 log "vscode extensions"
 log "libmagic"
@@ -639,5 +615,9 @@ cat <<EOF >>~/.zprofile
 # Add Visual Studio Code (code)
 export PATH="\$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
 EOF
+
+curl -fsSL https://get.pnpm.io/install.sh | sh - || true
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
+
 log "asking for sudo permission to reboot"
 sudo reboot now
