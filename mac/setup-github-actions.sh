@@ -1,4 +1,45 @@
 #!/bin/bash
+#
+# GitHub Actions Runner Setup Script for macOS
+#
+# This script sets up the macOS environment for GitHub Actions self-hosted runners.
+# After running, you'll need to manually configure the runner for your repository.
+#
+# Usage:
+#   ./setup-github-actions.sh
+#   ./setup-github-actions.sh --debug
+# --> ✅ Setup complete! Next steps:
+
+# --> 1. Get your runner token:
+# -->    - Go to your GitHub repository
+# -->    - Navigate to Settings > Actions > Runners
+# -->    - Click 'New self-hosted runner'
+# -->    - Copy the token from the configuration command
+
+# --> 2. Download and configure the runner (as the 'runner' user):
+# -->    sudo su - runner
+# -->    mkdir -p ~/actions-runner && cd ~/actions-runner
+# -->    curl -O -L https://github.com/actions/runner/releases
+# -->    tar xzf ./actions-runner.tar.gz
+# -->    ./config.sh --url https://github.com/[owner]/[repo] --token [token]
+# -->    exit
+
+# --> 3. Load and start the LaunchDaemon:
+# -->    sudo launchctl load -w /Library/LaunchDaemons/com.github.actions.runner.plist
+
+# --> 4. Verify the runner is running:
+# -->    sudo launchctl list | grep github.actions.runner
+# -->    tail -f /Users/runner/actions-runner/runner.log
+
+# --> Service Management Commands:
+# -->    Start:   sudo launchctl load -w /Library/LaunchDaemons/com.github.actions.runner.plist
+# -->    Stop:    sudo launchctl unload /Library/LaunchDaemons/com.github.actions.runner.plist
+# -->    Status:  sudo launchctl list | grep github.actions.runner
+# -->    Logs:    tail -f /Users/runner/actions-runner/runner.log
+
+# --> For React Native iOS builds, use in your workflow:
+# -->    runs-on: self-hosted
+
 
 set -e
 
@@ -75,11 +116,8 @@ cleanup() {
   fi
 }
 
-# We want to always prompt for sudo password at least once rather than doing
-# root stuff unexpectedly.
 sudo --reset-timestamp
 
-# functions for turning off debug for use when handling the user password
 clear_debug() {
   set +x
 }
@@ -90,13 +128,11 @@ reset_debug() {
   fi
 }
 
-# Initialise (or reinitialise) sudo to save unhelpful prompts later.
 sudo_init() {
   if [ -z "$INTERACTIVE" ]; then
     return
   fi
 
-  # If TouchID for sudo is setup: use that instead.
   if grep -q pam_tid /etc/pam.d/sudo; then
     return
   fi
@@ -138,17 +174,14 @@ BASH
 # shellcheck disable=SC2086
 groups | grep $Q -E "\b(admin)\b" || abort "Add $USER to the admin group."
 
-# Prevent sleeping during script execution, as long as the machine is on AC power
 caffeinate -s -w $$ &
 
-log "🚀 Setting up M4 Mac for GitHub Actions iOS React Native builds"
+log "🚀 Setting up M4 Mac for GitHub Actions React Native builds"
 
-# Check if running on Apple Silicon
 UNAME_MACHINE="$(/usr/bin/uname -m)"
 if [[ "$UNAME_MACHINE" == "arm64" ]]; then
   log "Detected Apple Silicon (ARM64) architecture"
   
-  # Install Rosetta 2 for Intel compatibility
   logn "Checking for Rosetta 2:"
   if pgrep -q oahd; then
     logk
@@ -161,7 +194,36 @@ else
   log "Detected Intel architecture"
 fi
 
-# Install the Xcode Command Line Tools.
+log "Setting up 'runner' service account:"
+if dscl . -read /Users/runner &>/dev/null; then
+  log "Runner user already exists"
+else
+  log "Creating runner service account..."
+  
+  RUNNER_PASSWORD=$(openssl rand -base64 32)
+  
+  sudo_askpass dscl . -create /Users/runner
+  sudo_askpass dscl . -create /Users/runner UserShell /bin/bash
+  sudo_askpass dscl . -create /Users/runner RealName "GitHub Actions Runner"
+  sudo_askpass dscl . -create /Users/runner UniqueID "510"
+  sudo_askpass dscl . -create /Users/runner PrimaryGroupID 20
+  sudo_askpass dscl . -create /Users/runner NFSHomeDirectory /Users/runner
+  sudo_askpass dscl . -passwd /Users/runner "$RUNNER_PASSWORD"
+  
+  sudo_askpass dscl . -append /Groups/admin GroupMembership runner
+  
+  sudo_askpass mkdir -p /Users/runner
+  sudo_askpass chown -R runner:staff /Users/runner
+  
+  RUNNER_CREDS_FILE="$HOME/.github-runner-credentials"
+  echo "runner:$RUNNER_PASSWORD" > "$RUNNER_CREDS_FILE"
+  chmod 600 "$RUNNER_CREDS_FILE"
+  
+  log "Runner account created. Password saved to: $RUNNER_CREDS_FILE"
+  unset RUNNER_PASSWORD
+  logk
+fi
+
 if ! [ -f "/Library/Developer/CommandLineTools/usr/bin/git" ]; then
   log "Installing the Xcode Command Line Tools:"
   CLT_PLACEHOLDER="/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress"
@@ -182,7 +244,6 @@ if ! [ -f "/Library/Developer/CommandLineTools/usr/bin/git" ]; then
   logk
 fi
 
-# Check if Xcode is installed
 logn "Checking for Xcode installation:"
 if [ -d "/Applications/Xcode.app" ]; then
   logk
@@ -204,7 +265,6 @@ else
   fi
 fi
 
-# Check if the Xcode license is agreed to and agree if not.
 logn "Checking Xcode license agreement:"
 if /usr/bin/xcrun clang 2>&1 | grep "$Q" license; then
   if [ -n "$INTERACTIVE" ]; then
@@ -218,12 +278,10 @@ else
   logk
 fi
 
-# Run Xcode first launch
 logn "Running Xcode first launch setup:"
 sudo_askpass xcodebuild -runFirstLaunch
 logk
 
-# Setup Homebrew directory and permissions.
 logn "Checking Homebrew installation:"
 HOMEBREW_PREFIX="$(brew --prefix 2>/dev/null || true)"
 HOMEBREW_REPOSITORY="$(brew --repository 2>/dev/null || true)"
@@ -255,7 +313,6 @@ if [ -z "$HOMEBREW_PREFIX" ] || [ -z "$HOMEBREW_REPOSITORY" ]; then
     ln -sf "$HOMEBREW_REPOSITORY/bin/brew" "$HOMEBREW_PREFIX/bin/brew"
   fi
 
-  # Download Homebrew.
   export GIT_DIR="$HOMEBREW_REPOSITORY/.git" GIT_WORK_TREE="$HOMEBREW_REPOSITORY"
   git init "$Q"
   git config remote.origin.url "https://github.com/Homebrew/brew"
@@ -268,18 +325,15 @@ else
   logk
 fi
 
-# Update Homebrew.
 export PATH="$HOMEBREW_PREFIX/bin:$PATH"
 logn "Updating Homebrew:"
 brew update --quiet
 logk
 
-# Install essential tools
 log "Installing essential tools:"
 brew install git node
 logk
 
-# Install Watchman (required for React Native)
 logn "Installing Watchman:"
 if command -v watchman &> /dev/null; then
   logk
@@ -288,7 +342,6 @@ else
   logk
 fi
 
-# Install CocoaPods
 logn "Installing CocoaPods:"
 if command -v pod &> /dev/null; then
   logk
@@ -297,7 +350,6 @@ else
   logk
 fi
 
-# Install Fastlane
 logn "Installing Fastlane:"
 if command -v fastlane &> /dev/null; then
   logk
@@ -306,69 +358,147 @@ else
   logk
 fi
 
-# Install React Native CLI globally
-logn "Installing React Native CLI:"
+logn "Installing React Native tooling:"
 if command -v react-native &> /dev/null; then
   logk
 else
   npm install -g react-native-cli
+  npm install -g eas-cli
   logk
 fi
 
-# Set up environment variables for GitHub Actions runner
 log "Setting up environment variables:"
-RUNNER_ENV_FILE="$HOME/.github-actions-runner.env"
-cat > "$RUNNER_ENV_FILE" <<EOF
+RUNNER_ENV_FILE="/Users/runner/.github-actions-runner.env"
+sudo_askpass tee "$RUNNER_ENV_FILE" > /dev/null <<EOF
 # GitHub Actions Runner Environment Variables
-# Source this file in your shell profile or runner service
 
-# Xcode Developer Directory
 export XCODE_DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
-
-# ImageOS (adjust based on your macOS version)
-# macOS 12 = macos12, macOS 13 = macos13, macOS 14 = macos14, macOS 15 = macos15
 export ImageOS=macos15
-
-# Node.js path
 export PATH="$HOMEBREW_PREFIX/bin:\$PATH"
-
-# CocoaPods path
 export PATH="\$HOME/.gem/ruby/*/bin:\$PATH"
 EOF
+sudo_askpass chown runner:staff "$RUNNER_ENV_FILE"
+
+sudo_askpass tee /Users/runner/.bash_profile > /dev/null <<EOF
+if [ -f ~/.github-actions-runner.env ]; then
+  source ~/.github-actions-runner.env
+fi
+EOF
+sudo_askpass chown runner:staff /Users/runner/.bash_profile
 logk
 
-# Display next steps
+log "Setting up LaunchDaemon for automatic runner startup:"
+LAUNCH_DAEMON_PLIST="/Library/LaunchDaemons/com.github.actions.runner.plist"
+RUNNER_DIR="/Users/runner/actions-runner"
+
+RUNNER_START_SCRIPT="/Users/runner/start-runner.sh"
+sudo_askpass tee "$RUNNER_START_SCRIPT" > /dev/null <<'EOF'
+#!/bin/bash
+
+RUNNER_DIR="/Users/runner/actions-runner"
+LOG_FILE="/Users/runner/actions-runner/runner.log"
+
+if [ -f /Users/runner/.github-actions-runner.env ]; then
+  source /Users/runner/.github-actions-runner.env
+fi
+
+sleep 10
+
+cd "$RUNNER_DIR"
+
+if [ ! -f "$RUNNER_DIR/.runner" ]; then
+  echo "$(date): Runner not configured yet. Please run config.sh first." >> "$LOG_FILE"
+  exit 1
+fi
+
+exec ./run.sh >> "$LOG_FILE" 2>&1
+EOF
+sudo_askpass chmod +x "$RUNNER_START_SCRIPT"
+sudo_askpass chown runner:staff "$RUNNER_START_SCRIPT"
+
+sudo_askpass tee "$LAUNCH_DAEMON_PLIST" > /dev/null <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.github.actions.runner</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/runner/start-runner.sh</string>
+    </array>
+    <key>UserName</key>
+    <string>runner</string>
+    <key>GroupName</key>
+    <string>staff</string>
+    <key>WorkingDirectory</key>
+    <string>/Users/runner/actions-runner</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/Users/runner/actions-runner/runner-stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/runner/actions-runner/runner-stderr.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>$HOMEBREW_PREFIX/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>XCODE_DEVELOPER_DIR</key>
+        <string>/Applications/Xcode.app/Contents/Developer</string>
+    </dict>
+</dict>
+</plist>
+EOF
+
+sudo_askpass chown root:wheel "$LAUNCH_DAEMON_PLIST"
+sudo_askpass chmod 644 "$LAUNCH_DAEMON_PLIST"
+logk
+
 echo
 log "✅ Setup complete! Next steps:"
 echo
-log "1. Set up the GitHub Actions runner:"
+log "1. Get your runner token:"
 log "   - Go to your GitHub repository"
 log "   - Navigate to Settings > Actions > Runners"
 log "   - Click 'New self-hosted runner'"
-log "   - Select macOS and follow the instructions"
+log "   - Copy the token from the configuration command"
 echo
-log "2. Download and configure the runner:"
+log "2. Download and configure the runner (as the 'runner' user):"
+log "   sudo su - runner"
 log "   mkdir -p ~/actions-runner && cd ~/actions-runner"
 if [[ "$UNAME_MACHINE" == "arm64" ]]; then
-  log "   curl -O -L https://github.com/actions/runner/releases/latest/download/actions-runner-osx-arm64-\$(curl -s https://api.github.com/repos/actions/runner/releases/latest | grep 'tag_name' | cut -d '\"' -f 4 | sed 's/v//').tar.gz"
+  log "   curl -O -L https://github.com/actions/runner/releases"
+  log "   tar xzf ./actions-runner.tar.gz"
 else
-  log "   curl -O -L https://github.com/actions/runner/releases/latest/download/actions-runner-osx-x64-\$(curl -s https://api.github.com/repos/actions/runner/releases/latest | grep 'tag_name' | cut -d '\"' -f 4 | sed 's/v//').tar.gz"
+  log "   curl -O -L https://github.com/actions/runner/releases/latest/download/actions-runner"
+  log "   tar xzf ./actions-runner.tar.gz"
 fi
-log "   tar xzf ./actions-runner-*.tar.gz"
 log "   ./config.sh --url https://github.com/[owner]/[repo] --token [token]"
+log "   exit"
 echo
-log "3. Install and start the runner as a service:"
-log "   ./svc.sh install"
-log "   ./svc.sh start"
+log "3. Load and start the LaunchDaemon:"
+log "   sudo launchctl load -w $LAUNCH_DAEMON_PLIST"
 echo
-log "4. Source the environment variables (add to ~/.zshrc or ~/.bash_profile):"
-log "   source $RUNNER_ENV_FILE"
+log "4. Verify the runner is running:"
+log "   sudo launchctl list | grep github.actions.runner"
+log "   tail -f /Users/runner/actions-runner/runner.log"
 echo
-log "5. For React Native iOS builds, ensure your workflow uses:"
+log "Service Management Commands:"
+log "   Start:   sudo launchctl load -w $LAUNCH_DAEMON_PLIST"
+log "   Stop:    sudo launchctl unload $LAUNCH_DAEMON_PLIST"
+log "   Status:  sudo launchctl list | grep github.actions.runner"
+log "   Logs:    tail -f /Users/runner/actions-runner/runner.log"
+echo
+log "For React Native iOS builds, use in your workflow:"
 log "   runs-on: self-hosted"
-log "   and installs pods: cd ios && pod install"
+echo
+log "Note: Runner credentials saved in: $HOME/.github-runner-credentials"
 echo
 
 SUCCESS="1"
 log "✅ M4 Mac is now ready for GitHub Actions iOS React Native builds! ✅"
-
