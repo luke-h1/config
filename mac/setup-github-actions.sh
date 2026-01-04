@@ -16,26 +16,24 @@
 # -->    - Click 'New self-hosted runner'
 # -->    - Copy the token from the configuration command
 
-# --> 2. Download and configure the runner (as the 'runner' user):
-# -->    sudo su - runner
+# --> 2. Download and configure the runner:
 # -->    mkdir -p ~/actions-runner && cd ~/actions-runner
 # -->    curl -O -L https://github.com/actions/runner/releases
 # -->    tar xzf ./actions-runner.tar.gz
 # -->    ./config.sh --url https://github.com/[owner]/[repo] --token [token]
-# -->    exit
 
-# --> 3. Load and start the LaunchDaemon:
-# -->    sudo launchctl load -w /Library/LaunchDaemons/com.github.actions.runner.plist
+# --> 3. Load and start the LaunchAgent:
+# -->    launchctl load -w ~/Library/LaunchAgents/com.github.actions.runner.plist
 
 # --> 4. Verify the runner is running:
-# -->    sudo launchctl list | grep github.actions.runner
-# -->    tail -f /Users/runner/actions-runner/runner.log
+# -->    launchctl list | grep github.actions.runner
+# -->    tail -f ~/actions-runner/runner.log
 
 # --> Service Management Commands:
-# -->    Start:   sudo launchctl load -w /Library/LaunchDaemons/com.github.actions.runner.plist
-# -->    Stop:    sudo launchctl unload /Library/LaunchDaemons/com.github.actions.runner.plist
-# -->    Status:  sudo launchctl list | grep github.actions.runner
-# -->    Logs:    tail -f /Users/runner/actions-runner/runner.log
+# -->    Start:   launchctl load -w ~/Library/LaunchAgents/com.github.actions.runner.plist
+# -->    Stop:    launchctl unload ~/Library/LaunchAgents/com.github.actions.runner.plist
+# -->    Status:  launchctl list | grep github.actions.runner
+# -->    Logs:    tail -f ~/actions-runner/runner.log
 
 # --> For React Native iOS builds, use in your workflow:
 # -->    runs-on: self-hosted
@@ -176,6 +174,40 @@ groups | grep $Q -E "\b(admin)\b" || abort "Add $USER to the admin group."
 
 caffeinate -s -w $$ &
 
+# Configure git to use your GitHub user, not github-actions[bot]
+log "Configuring git for GitHub Actions:"
+GIT_NAME="luke-h1"
+GIT_EMAIL=""  # Set this to your GitHub email if you want, or leave empty
+GITHUB_USER="luke-h1"
+
+# Save current git user config if it exists (to preserve if already correct)
+SAVED_GIT_NAME=""
+SAVED_GIT_EMAIL=""
+if git config --global user.name >/dev/null 2>&1; then
+  SAVED_GIT_NAME="$(git config --global user.name)"
+fi
+if git config --global user.email >/dev/null 2>&1; then
+  SAVED_GIT_EMAIL="$(git config --global user.email)"
+fi
+
+# Set git config to your GitHub user (not github-actions[bot])
+if [ -n "$GIT_NAME" ]; then
+  git config --global user.name "$GIT_NAME"
+fi
+if [ -n "$GIT_EMAIL" ]; then
+  git config --global user.email "$GIT_EMAIL"
+elif [ -n "$SAVED_GIT_EMAIL" ] && [ "$SAVED_GIT_EMAIL" != "github-actions[bot]@users.noreply.github.com" ]; then
+  # Keep existing email if it's not the bot email
+  git config --global user.email "$SAVED_GIT_EMAIL"
+else
+  # Remove bot email if it exists
+  git config --global --unset user.email 2>/dev/null || true
+fi
+if [ -n "$GITHUB_USER" ]; then
+  git config --global github.user "$GITHUB_USER"
+fi
+logk
+
 log "🚀 Setting up M4 Mac for GitHub Actions React Native builds"
 
 UNAME_MACHINE="$(/usr/bin/uname -m)"
@@ -194,35 +226,7 @@ else
   log "Detected Intel architecture"
 fi
 
-log "Setting up 'runner' service account:"
-if dscl . -read /Users/runner &>/dev/null; then
-  log "Runner user already exists"
-else
-  log "Creating runner service account..."
-  
-  RUNNER_PASSWORD=$(openssl rand -base64 32)
-  
-  sudo_askpass dscl . -create /Users/runner
-  sudo_askpass dscl . -create /Users/runner UserShell /bin/bash
-  sudo_askpass dscl . -create /Users/runner RealName "GitHub Actions Runner"
-  sudo_askpass dscl . -create /Users/runner UniqueID "510"
-  sudo_askpass dscl . -create /Users/runner PrimaryGroupID 20
-  sudo_askpass dscl . -create /Users/runner NFSHomeDirectory /Users/runner
-  sudo_askpass dscl . -passwd /Users/runner "$RUNNER_PASSWORD"
-  
-  sudo_askpass dscl . -append /Groups/admin GroupMembership runner
-  
-  sudo_askpass mkdir -p /Users/runner
-  sudo_askpass chown -R runner:staff /Users/runner
-  
-  RUNNER_CREDS_FILE="$HOME/.github-runner-credentials"
-  echo "runner:$RUNNER_PASSWORD" > "$RUNNER_CREDS_FILE"
-  chmod 600 "$RUNNER_CREDS_FILE"
-  
-  log "Runner account created. Password saved to: $RUNNER_CREDS_FILE"
-  unset RUNNER_PASSWORD
-  logk
-fi
+log "Setting up runner environment for user: $USER"
 
 if ! [ -f "/Library/Developer/CommandLineTools/usr/bin/git" ]; then
   log "Installing the Xcode Command Line Tools:"
@@ -313,13 +317,24 @@ if [ -z "$HOMEBREW_PREFIX" ] || [ -z "$HOMEBREW_REPOSITORY" ]; then
     ln -sf "$HOMEBREW_REPOSITORY/bin/brew" "$HOMEBREW_PREFIX/bin/brew"
   fi
 
+  # Use --local flag to ensure we only modify the Homebrew repo's git config, not global
   export GIT_DIR="$HOMEBREW_REPOSITORY/.git" GIT_WORK_TREE="$HOMEBREW_REPOSITORY"
   git init "$Q"
-  git config remote.origin.url "https://github.com/Homebrew/brew"
-  git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+  git config --local remote.origin.url "https://github.com/Homebrew/brew"
+  git config --local remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
   git fetch "$Q" --tags --force
   git reset "$Q" --hard origin/master
   unset GIT_DIR GIT_WORK_TREE
+  
+  # Ensure git user config is still set to your GitHub user (not bot)
+  if [ -n "$GIT_NAME" ]; then
+    git config --global user.name "$GIT_NAME" 2>/dev/null || true
+  fi
+  if [ -n "$GIT_EMAIL" ]; then
+    git config --global user.email "$GIT_EMAIL" 2>/dev/null || true
+  elif [ -n "$SAVED_GIT_EMAIL" ] && [ "$SAVED_GIT_EMAIL" != "github-actions[bot]@users.noreply.github.com" ]; then
+    git config --global user.email "$SAVED_GIT_EMAIL" 2>/dev/null || true
+  fi
   logk
 else
   logk
@@ -364,12 +379,21 @@ if command -v react-native &> /dev/null; then
 else
   npm install -g react-native-cli
   npm install -g eas-cli
+  # Ensure git config is still set to your GitHub user after npm installs
+  if [ -n "$GIT_NAME" ]; then
+    git config --global user.name "$GIT_NAME" 2>/dev/null || true
+  fi
+  if [ -n "$GIT_EMAIL" ]; then
+    git config --global user.email "$GIT_EMAIL" 2>/dev/null || true
+  elif [ -n "$SAVED_GIT_EMAIL" ] && [ "$SAVED_GIT_EMAIL" != "github-actions[bot]@users.noreply.github.com" ]; then
+    git config --global user.email "$SAVED_GIT_EMAIL" 2>/dev/null || true
+  fi
   logk
 fi
 
 log "Setting up environment variables:"
-RUNNER_ENV_FILE="/Users/runner/.github-actions-runner.env"
-sudo_askpass tee "$RUNNER_ENV_FILE" > /dev/null <<EOF
+RUNNER_ENV_FILE="$HOME/.github-actions-runner.env"
+cat > "$RUNNER_ENV_FILE" <<EOF
 # GitHub Actions Runner Environment Variables
 
 export XCODE_DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
@@ -377,46 +401,57 @@ export ImageOS=macos15
 export PATH="$HOMEBREW_PREFIX/bin:\$PATH"
 export PATH="\$HOME/.gem/ruby/*/bin:\$PATH"
 EOF
-sudo_askpass chown runner:staff "$RUNNER_ENV_FILE"
+chmod 600 "$RUNNER_ENV_FILE"
 
-sudo_askpass tee /Users/runner/.bash_profile > /dev/null <<EOF
+if [ -f "$HOME/.bash_profile" ]; then
+  if ! grep -q "github-actions-runner.env" "$HOME/.bash_profile"; then
+    cat >> "$HOME/.bash_profile" <<EOF
+
 if [ -f ~/.github-actions-runner.env ]; then
   source ~/.github-actions-runner.env
 fi
 EOF
-sudo_askpass chown runner:staff /Users/runner/.bash_profile
+  fi
+else
+  cat > "$HOME/.bash_profile" <<EOF
+if [ -f ~/.github-actions-runner.env ]; then
+  source ~/.github-actions-runner.env
+fi
+EOF
+fi
 logk
 
-log "Setting up LaunchDaemon for automatic runner startup:"
-LAUNCH_DAEMON_PLIST="/Library/LaunchDaemons/com.github.actions.runner.plist"
-RUNNER_DIR="/Users/runner/actions-runner"
+log "Setting up LaunchAgent for automatic runner startup:"
+LAUNCH_AGENT_PLIST="$HOME/Library/LaunchAgents/com.github.actions.runner.plist"
+RUNNER_DIR="$HOME/actions-runner"
 
-RUNNER_START_SCRIPT="/Users/runner/start-runner.sh"
-sudo_askpass tee "$RUNNER_START_SCRIPT" > /dev/null <<'EOF'
+mkdir -p "$HOME/Library/LaunchAgents"
+
+RUNNER_START_SCRIPT="$HOME/start-runner.sh"
+cat > "$RUNNER_START_SCRIPT" <<EOF
 #!/bin/bash
 
-RUNNER_DIR="/Users/runner/actions-runner"
-LOG_FILE="/Users/runner/actions-runner/runner.log"
+RUNNER_DIR="$HOME/actions-runner"
+LOG_FILE="$HOME/actions-runner/runner.log"
 
-if [ -f /Users/runner/.github-actions-runner.env ]; then
-  source /Users/runner/.github-actions-runner.env
+if [ -f "$HOME/.github-actions-runner.env" ]; then
+  source "$HOME/.github-actions-runner.env"
 fi
 
 sleep 10
 
-cd "$RUNNER_DIR"
+cd "\$RUNNER_DIR"
 
-if [ ! -f "$RUNNER_DIR/.runner" ]; then
-  echo "$(date): Runner not configured yet. Please run config.sh first." >> "$LOG_FILE"
+if [ ! -f "\$RUNNER_DIR/.runner" ]; then
+  echo "\$(date): Runner not configured yet. Please run config.sh first." >> "\$LOG_FILE"
   exit 1
 fi
 
-exec ./run.sh >> "$LOG_FILE" 2>&1
+exec ./run.sh >> "\$LOG_FILE" 2>&1
 EOF
-sudo_askpass chmod +x "$RUNNER_START_SCRIPT"
-sudo_askpass chown runner:staff "$RUNNER_START_SCRIPT"
+chmod +x "$RUNNER_START_SCRIPT"
 
-sudo_askpass tee "$LAUNCH_DAEMON_PLIST" > /dev/null <<EOF
+cat > "$LAUNCH_AGENT_PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -425,14 +460,10 @@ sudo_askpass tee "$LAUNCH_DAEMON_PLIST" > /dev/null <<EOF
     <string>com.github.actions.runner</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/runner/start-runner.sh</string>
+        <string>$HOME/start-runner.sh</string>
     </array>
-    <key>UserName</key>
-    <string>runner</string>
-    <key>GroupName</key>
-    <string>staff</string>
     <key>WorkingDirectory</key>
-    <string>/Users/runner/actions-runner</string>
+    <string>$HOME/actions-runner</string>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
@@ -441,9 +472,9 @@ sudo_askpass tee "$LAUNCH_DAEMON_PLIST" > /dev/null <<EOF
         <false/>
     </dict>
     <key>StandardOutPath</key>
-    <string>/Users/runner/actions-runner/runner-stdout.log</string>
+    <string>$HOME/actions-runner/runner-stdout.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/runner/actions-runner/runner-stderr.log</string>
+    <string>$HOME/actions-runner/runner-stderr.log</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
@@ -455,8 +486,7 @@ sudo_askpass tee "$LAUNCH_DAEMON_PLIST" > /dev/null <<EOF
 </plist>
 EOF
 
-sudo_askpass chown root:wheel "$LAUNCH_DAEMON_PLIST"
-sudo_askpass chmod 644 "$LAUNCH_DAEMON_PLIST"
+chmod 644 "$LAUNCH_AGENT_PLIST"
 logk
 
 echo
@@ -468,37 +498,61 @@ log "   - Navigate to Settings > Actions > Runners"
 log "   - Click 'New self-hosted runner'"
 log "   - Copy the token from the configuration command"
 echo
-log "2. Download and configure the runner (as the 'runner' user):"
-log "   sudo su - runner"
+log "2. Download and configure the runner:"
 log "   mkdir -p ~/actions-runner && cd ~/actions-runner"
 if [[ "$UNAME_MACHINE" == "arm64" ]]; then
-  log "   curl -O -L https://github.com/actions/runner/releases"
-  log "   tar xzf ./actions-runner.tar.gz"
+  log "   Visit: https://github.com/actions/runner/releases/latest"
+  log "   Download: actions-runner-osx-arm64-[version].tar.gz"
+  log "   tar xzf ./actions-runner-osx-arm64-*.tar.gz"
 else
-  log "   curl -O -L https://github.com/actions/runner/releases/latest/download/actions-runner"
-  log "   tar xzf ./actions-runner.tar.gz"
+  log "   Visit: https://github.com/actions/runner/releases/latest"
+  log "   Download: actions-runner-osx-x64-[version].tar.gz"
+  log "   tar xzf ./actions-runner-osx-x64-*.tar.gz"
 fi
 log "   ./config.sh --url https://github.com/[owner]/[repo] --token [token]"
-log "   exit"
 echo
-log "3. Load and start the LaunchDaemon:"
-log "   sudo launchctl load -w $LAUNCH_DAEMON_PLIST"
+log "3. Load and start the LaunchAgent:"
+log "   launchctl load -w $LAUNCH_AGENT_PLIST"
 echo
 log "4. Verify the runner is running:"
-log "   sudo launchctl list | grep github.actions.runner"
-log "   tail -f /Users/runner/actions-runner/runner.log"
+log "   launchctl list | grep github.actions.runner"
+log "   tail -f ~/actions-runner/runner.log"
 echo
 log "Service Management Commands:"
-log "   Start:   sudo launchctl load -w $LAUNCH_DAEMON_PLIST"
-log "   Stop:    sudo launchctl unload $LAUNCH_DAEMON_PLIST"
-log "   Status:  sudo launchctl list | grep github.actions.runner"
-log "   Logs:    tail -f /Users/runner/actions-runner/runner.log"
+log "   Start:   launchctl load -w $LAUNCH_AGENT_PLIST"
+log "   Stop:    launchctl unload $LAUNCH_AGENT_PLIST"
+log "   Status:  launchctl list | grep github.actions.runner"
+log "   Logs:    tail -f ~/actions-runner/runner.log"
 echo
 log "For React Native iOS builds, use in your workflow:"
 log "   runs-on: self-hosted"
 echo
-log "Note: Runner credentials saved in: $HOME/.github-runner-credentials"
-echo
+
+# Final check: ensure git is configured for your GitHub user, not github-actions[bot]
+logn "Verifying git configuration:"
+CURRENT_GIT_NAME="$(git config --global user.name 2>/dev/null || echo '')"
+CURRENT_GIT_EMAIL="$(git config --global user.email 2>/dev/null || echo '')"
+
+if [ "$CURRENT_GIT_NAME" = "github-actions[bot]" ] || [ -z "$CURRENT_GIT_NAME" ]; then
+  if [ -n "$GIT_NAME" ]; then
+    git config --global user.name "$GIT_NAME"
+    log "Set git user.name to: $GIT_NAME"
+  fi
+fi
+
+if [ "$CURRENT_GIT_EMAIL" = "github-actions[bot]@users.noreply.github.com" ] || [ -z "$CURRENT_GIT_EMAIL" ]; then
+  if [ -n "$GIT_EMAIL" ]; then
+    git config --global user.email "$GIT_EMAIL"
+    log "Set git user.email to: $GIT_EMAIL"
+  elif [ -n "$SAVED_GIT_EMAIL" ] && [ "$SAVED_GIT_EMAIL" != "github-actions[bot]@users.noreply.github.com" ]; then
+    git config --global user.email "$SAVED_GIT_EMAIL"
+    log "Restored git user.email to: $SAVED_GIT_EMAIL"
+  else
+    git config --global --unset user.email 2>/dev/null || true
+    log "Removed github-actions[bot] email"
+  fi
+fi
+logk
 
 SUCCESS="1"
 log "✅ M4 Mac is now ready for GitHub Actions iOS React Native builds! ✅"
