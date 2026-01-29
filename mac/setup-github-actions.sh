@@ -174,13 +174,11 @@ groups | grep $Q -E "\b(admin)\b" || abort "Add $USER to the admin group."
 
 caffeinate -s -w $$ &
 
-# Configure git to use your GitHub user, not github-actions[bot]
 log "Configuring git for GitHub Actions:"
 GIT_NAME="luke-h1"
-GIT_EMAIL=""  # Set this to your GitHub email if you want, or leave empty
+GIT_EMAIL=""
 GITHUB_USER="luke-h1"
 
-# Save current git user config if it exists (to preserve if already correct)
 SAVED_GIT_NAME=""
 SAVED_GIT_EMAIL=""
 if git config --global user.name >/dev/null 2>&1; then
@@ -194,6 +192,8 @@ fi
 if [ -n "$GIT_NAME" ]; then
   git config --global user.name "$GIT_NAME"
 fi
+# Explicitly set username to ensure it's configured
+git config --global user.name "luke-h1"
 if [ -n "$GIT_EMAIL" ]; then
   git config --global user.email "$GIT_EMAIL"
 elif [ -n "$SAVED_GIT_EMAIL" ] && [ "$SAVED_GIT_EMAIL" != "github-actions[bot]@users.noreply.github.com" ]; then
@@ -326,7 +326,6 @@ if [ -z "$HOMEBREW_PREFIX" ] || [ -z "$HOMEBREW_REPOSITORY" ]; then
   git reset "$Q" --hard origin/master
   unset GIT_DIR GIT_WORK_TREE
   
-  # Ensure git user config is still set to your GitHub user (not bot)
   if [ -n "$GIT_NAME" ]; then
     git config --global user.name "$GIT_NAME" 2>/dev/null || true
   fi
@@ -379,7 +378,6 @@ if command -v react-native &> /dev/null; then
 else
   npm install -g react-native-cli
   npm install -g eas-cli
-  # Ensure git config is still set to your GitHub user after npm installs
   if [ -n "$GIT_NAME" ]; then
     git config --global user.name "$GIT_NAME" 2>/dev/null || true
   fi

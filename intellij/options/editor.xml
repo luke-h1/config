@@ -1,0 +1,10 @@
+<application>
+  <component name="EditorSettings">
+    <!-- Word wrap enabled like Cursor's editor.wordWrap: on -->
+    <option name="USE_SOFT_WRAPS" value="MAIN_EDITOR" />
+    <option name="SOFT_WRAP_FILE_MASKS" value="*.*" />
+  </component>
+  <component name="InlineCompletionOnboarding">
+    <option name="onboardingFinished" value="true" />
+  </component>
+</application>

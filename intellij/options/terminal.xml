@@ -1,0 +1,7 @@
+<application>
+  <component name="TerminalOptionsProvider">
+    <!-- Match Cursor's terminal.integrated.scrollback: 100000 -->
+    <option name="maxScrollLines" value="100000" />
+    <option name="shellIntegration" value="true" />
+  </component>
+</application>

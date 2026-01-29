@@ -1,0 +1,40 @@
+<keymap version="1" name="CursorLike" parent="Mac OS X 10.5+">
+  <!-- Cursor-like keybindings -->
+
+  <!-- Remove Cmd+B from Go to Declaration (parent keymap default) -->
+  <action id="GotoDeclaration">
+    <keyboard-shortcut first-keystroke="meta b" remove="true" />
+  </action>
+
+  <!-- Cmd+B to toggle file tree/project explorer (like Cursor's sidebar) -->
+  <action id="ActivateProjectToolWindow">
+    <keyboard-shortcut first-keystroke="meta b" />
+  </action>
+
+  <!-- Cmd+L to expand line selection (like Cursor) -->
+  <action id="EditorSelectLine">
+    <keyboard-shortcut first-keystroke="meta l" />
+  </action>
+
+  <!-- Cmd+I for AI Assistant (similar to Cursor's composerMode.agent) -->
+  <action id="AIAssistant.Editor.AskAiAction">
+    <keyboard-shortcut first-keystroke="meta i" />
+  </action>
+
+  <!-- Keep common shortcuts consistent -->
+  <action id="GotoFile">
+    <keyboard-shortcut first-keystroke="meta p" />
+  </action>
+
+  <action id="GotoAction">
+    <keyboard-shortcut first-keystroke="meta shift p" />
+  </action>
+
+  <action id="FindInPath">
+    <keyboard-shortcut first-keystroke="meta shift f" />
+  </action>
+
+  <action id="ReformatCode">
+    <keyboard-shortcut first-keystroke="meta alt l" />
+  </action>
+</keymap>
