@@ -231,6 +231,8 @@ sync_config_to_ide() {
     [ -f "$ide_dir/options/mac/keymap.xml" ] && cp "$ide_dir/options/mac/keymap.xml" "$backup_dir/options/mac/" 2>/dev/null || true
     [ -f "$ide_dir/options/laf.xml" ] && cp "$ide_dir/options/laf.xml" "$backup_dir/options/" 2>/dev/null || true
     [ -f "$ide_dir/options/ui.lnf.xml" ] && cp "$ide_dir/options/ui.lnf.xml" "$backup_dir/options/" 2>/dev/null || true
+    [ -f "$ide_dir/options/window.layouts.xml" ] && cp "$ide_dir/options/window.layouts.xml" "$backup_dir/options/" 2>/dev/null || true
+    [ -f "$ide_dir/options/project.default.xml" ] && cp "$ide_dir/options/project.default.xml" "$backup_dir/options/" 2>/dev/null || true
 
     # Copy new config files
     echo "Copying options..."
@@ -244,6 +246,8 @@ sync_config_to_ide() {
     cp "$SCRIPT_DIR/options/mac/keymap.xml" "$ide_dir/options/mac/"
     cp "$SCRIPT_DIR/options/laf.xml" "$ide_dir/options/"
     cp "$SCRIPT_DIR/options/ui.lnf.xml" "$ide_dir/options/"
+    cp "$SCRIPT_DIR/options/window.layouts.xml" "$ide_dir/options/"
+    cp "$SCRIPT_DIR/options/project.default.xml" "$ide_dir/options/"
 
     echo "Copying code styles..."
     cp "$SCRIPT_DIR/codestyles/Prettier.xml" "$ide_dir/codestyles/"
@@ -314,8 +318,9 @@ echo "  - Prettier-style code formatting"
 echo "  - Dark theme (Darcula/ExperimentalDark)"
 echo "  - Minimal UI: compact mode, no breadcrumbs, smooth scrolling"
 echo "  - Plugins: Atom Material Icons, AWS Toolkit, Kotlin, Flutter, Dart, Claude Code"
+echo "  - Project tool window: auto-hide + always select opened file"
 echo "  - CursorLike keymap:"
-echo "      Cmd+B  - Toggle file tree"
+echo "      Cmd+B  - Toggle file tree (auto-hides when clicking in editor)"
 echo "      Cmd+J  - Toggle terminal"
 echo "      Cmd+L  - Select line"
 echo "      Cmd+I  - AI Assistant"

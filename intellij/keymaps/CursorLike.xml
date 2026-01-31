@@ -1,17 +1,20 @@
 <keymap version="1" name="CursorLike" parent="Mac OS X 10.5+">
   <!-- Cursor-like keybindings -->
-
-  <!-- Remove Cmd+B from Go to Declaration (parent keymap default) -->
-  <action id="GotoDeclaration">
-    <keyboard-shortcut first-keystroke="meta b" remove="true" />
+  
+  <!-- Steal Cmd+1 from Project window - bind to FocusEditor instead -->
+  <!-- This prevents IntelliJ from re-adding Cmd+1 to ActivateProjectToolWindow -->
+  <action id="FocusEditor">
+    <keyboard-shortcut first-keystroke="meta 1" />
   </action>
 
-  <!-- Remove default Cmd+1 from Project tool window -->
+  <!-- Cmd+B for Project tool window (file tree toggle) -->
   <action id="ActivateProjectToolWindow">
-    <keyboard-shortcut first-keystroke="meta 1" remove="true" />
-    <!-- Cmd+B to toggle file tree/project explorer (like Cursor's sidebar) -->
-    <!-- In IntelliJ, pressing this when focused on project window will hide it -->
-    <keyboard-shortcut first-keystroke="meta b" />
+    <keyboard-shortcut first-keystroke="meta B" />
+  </action>
+  
+  <!-- Rebind Go to Declaration to F12 (VS Code style) to free up Cmd+B -->
+  <action id="GotoDeclaration">
+    <keyboard-shortcut first-keystroke="f12" />
   </action>
 
   <!-- Cmd+L to expand line selection (like Cursor) -->

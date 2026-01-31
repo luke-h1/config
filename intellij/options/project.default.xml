@@ -1,0 +1,26 @@
+<application>
+  <component name="ProjectManager">
+    <defaultProject>
+      <component name="ProjectView">
+        <navigator currentView="ProjectPane" proportions="" version="1">
+          <flattenPackages />
+          <showMembers />
+          <showModules />
+          <showLibraryContents />
+          <hideEmptyPackages />
+          <abbreviatePackageNames />
+          <autoscrollToSource />
+          <autoscrollFromSource value="true" />
+          <sortByType />
+          <manualOrder />
+          <foldersAlwaysOnTop value="true" />
+        </navigator>
+        <panes>
+          <pane id="ProjectPane">
+            <option name="show-excluded-files" value="false" />
+          </pane>
+        </panes>
+      </component>
+    </defaultProject>
+  </component>
+</application>
