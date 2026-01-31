@@ -1,0 +1,15 @@
+<application>
+  <component name="UISettings">
+    <!-- Compact UI like Cursor's compact tab height -->
+    <option name="COMPACT_MODE" value="true" />
+    <!-- Hide breadcrumbs like Cursor's breadcrumbs.enabled: false -->
+    <option name="SHOW_BREADCRUMBS" value="false" />
+    <!-- Smooth caret animation like Cursor -->
+    <option name="SMOOTH_SCROLLING" value="true" />
+    <option name="ANIMATED_SCROLLING" value="true" />
+    <!-- Hide toolbar for cleaner look -->
+    <option name="SHOW_MAIN_TOOLBAR" value="false" />
+    <!-- Enable tree indent guides -->
+    <option name="SHOW_TREE_INDENT_GUIDES" value="true" />
+  </component>
+</application>

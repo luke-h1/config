@@ -1,8 +1,8 @@
 <application>
   <component name="NotRoamableUiSettings">
-    <!-- UI font size matching Cursor's scale (window.zoomLevel: 1) -->
-    <option name="fontSize" value="14" />
-    <option name="ideScale" value="1.1" />
-    <option name="presentationModeIdeScale" value="1.75" />
+    <!-- UI scale matching Cursor's window.zoomLevel: 1 -->
+    <option name="fontSize" value="12" />
+    <option name="ideScale" value="1.0" />
+    <option name="presentationModeIdeScale" value="1.5" />
   </component>
 </application>

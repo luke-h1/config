@@ -6,8 +6,11 @@
     <keyboard-shortcut first-keystroke="meta b" remove="true" />
   </action>
 
-  <!-- Cmd+B to toggle file tree/project explorer (like Cursor's sidebar) -->
+  <!-- Remove default Cmd+1 from Project tool window -->
   <action id="ActivateProjectToolWindow">
+    <keyboard-shortcut first-keystroke="meta 1" remove="true" />
+    <!-- Cmd+B to toggle file tree/project explorer (like Cursor's sidebar) -->
+    <!-- In IntelliJ, pressing this when focused on project window will hide it -->
     <keyboard-shortcut first-keystroke="meta b" />
   </action>
 
@@ -36,5 +39,10 @@
 
   <action id="ReformatCode">
     <keyboard-shortcut first-keystroke="meta alt l" />
+  </action>
+
+  <!-- Cmd+J to toggle terminal (like Cursor) -->
+  <action id="ActivateTerminalToolWindow">
+    <keyboard-shortcut first-keystroke="meta j" />
   </action>
 </keymap>

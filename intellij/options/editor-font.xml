@@ -1,9 +1,9 @@
 <application>
   <component name="DefaultFont">
     <option name="VERSION" value="1" />
-    <!-- Match Cursor's default font size (14px) -->
-    <option name="FONT_SIZE" value="14" />
-    <option name="FONT_SIZE_2D" value="14.0" />
+    <!-- Match Cursor's editor.fontSize: 11 -->
+    <option name="FONT_SIZE" value="11" />
+    <option name="FONT_SIZE_2D" value="11.0" />
     <!-- Line spacing similar to Cursor -->
     <option name="LINE_SPACING" value="1.2" />
   </component>

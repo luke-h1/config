@@ -1,0 +1,6 @@
+<application>
+  <component name="LafManager" autodetect="false">
+    <!-- Dark theme to match Cursor's Default Dark Modern -->
+    <laf class-name="com.intellij.ide.ui.laf.darcula.DarculaLaf" themeId="ExperimentalDark" />
+  </component>
+</application>
