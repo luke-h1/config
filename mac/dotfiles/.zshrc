@@ -35,6 +35,7 @@ export PATH="/usr/local/opt/qt/bin:$PATH"
 alias studio="open -a 'Android Studio.app'"
 alias code="open -a 'Visual Studio Code.app'"
 alias ws="open -a 'WebStorm.app'"
+alias rider="open -a 'Rider.app'"
 
 
 # Set list of themes to pick from when loading at random
