@@ -594,6 +594,12 @@ SUCCESS="1"
 log "✅ System is now Bootstrapped! ✅"
 
 
+# key repeat 
+defaults write -g ApplePressAndHoldEnabled -bool false
+defaults write -g KeyRepeat -int 1
+defaults write -g InitialKeyRepeat -int 10
+
+
 log "❌---------------------------------------❌"
 log "remember to setup manually:"
 log "https://www.dbvis.com/"
