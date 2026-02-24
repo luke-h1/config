@@ -220,7 +220,14 @@ compdef ggpnp=git
 alias dockerstop="ps ax|grep -i docker|egrep -iv 'grep|com.docker.vmnetd'|awk '{print $1}'|xargs kill"
 alias coffee="caffeinate -d -i -s -u"
 
+xcode-clean() {
+  rm -rf ~/Library/Developer/Xcode/DerivedData
+  rm -rf ~/Library/Developer/CoreSimulator/Caches
+  rm -rf ~/Library/Caches/com.apple.dt.Xcode
+  xcrun simctl delete unavailable
+}
 
+alias xcclean='xcode-clean'
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="$HOME/.sdkman"
