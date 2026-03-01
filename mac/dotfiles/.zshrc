@@ -1,37 +1,17 @@
-# If you come from bash you might have to change your $PATH.
-export PATH=$HOME/bin:/usr/local/bin:$PATH
-export PATH=/usr/local/bin:/usr/local/sbin:${PATH}
-export PATH=${PATH}:/Users/lukehowsam/Library/Python/3.7/bin
-export PATH=/usr/local/bin:/usr/local/sbin:${PATH}
-export PATH=${PATH}:/Users/lukehowsam/.dotnet/tools
-export PATH=${PATH}:/Users/lukehowsam/.composer/vendor/bin
-export ANDROID_SDK_ROOT=$HOME/Library/Android/sdk
-export PATH=$PATH:$ANDROID_SDK_ROOT/emulator
-export PATH=$PATH:$ANDROID_SDK_ROOT/platform-tools
+export PATH="$HOME/bin:/usr/local/bin:/usr/local/sbin:/Users/lukehowsam/Library/Python/3.7/bin:/Users/lukehowsam/.dotnet/tools:/Users/lukehowsam/.composer/vendor/bin:/usr/local/opt/qt/bin:$PATH"
+export ANDROID_SDK_ROOT="$HOME/Library/Android/sdk"
+export PATH="$PATH:$ANDROID_SDK_ROOT/emulator:$ANDROID_SDK_ROOT/platform-tools"
 
-# Path to your oh-my-zsh installation.
-export ZSH="/Users/lukehowsam/.oh-my-zsh"
-fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
+export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="cloud"
 CASE_SENSITIVE="true"
-plugins=(
-  git
-  zsh-autosuggestions
-  bundler
-  dotenv
-  macos
-  rake
-  rbenv
-  ruby
-  zsh-syntax-highlighting 
-  fast-syntax-highlighting 
-  # zsh-autocomplete
-)
+DISABLE_AUTO_UPDATE="true"
 ZSH_DISABLE_COMPFIX="true"
-source $ZSH/oh-my-zsh.sh
+plugins=(git zsh-autosuggestions macos rbenv ruby fast-syntax-highlighting)
+fpath+=${ZSH_CUSTOM:-$ZSH/custom}/plugins/zsh-completions/src
+source "$ZSH/oh-my-zsh.sh"
 export CLICOLOR=1
 export LSCOLORS=GxFxCxDxBxegedabagaced
-export PATH="/usr/local/opt/qt/bin:$PATH"
 alias studio="open -a 'Android Studio.app'"
 alias code="open -a 'Visual Studio Code.app'"
 alias ws="open -a 'WebStorm.app'"
@@ -106,47 +86,26 @@ alias rider="open -a 'Rider.app'"
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
-# FNM (Fast Node Manager) setup
-eval "$(fnm env --use-on-cd)"
+# FNM
+eval "$(fnm env --use-on-cd 2>/dev/null)" 2>/dev/null || true
 
-export GOPATH=$HOME/go
-export GOBIN=$GOPATH/bin
-export PATH=$PATH:$GOBIN
+export GOPATH="$HOME/go"
+export PATH="$PATH:$HOME/go/bin"
 
 export PYENV_ROOT="$HOME/.pyenv"
-command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
-	eval "$(starship init zsh)"
-# pnpm
-export PNPM_HOME="/Users/lukehowsam/Library/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
-# pnpm end
+[[ -d "$PYENV_ROOT/bin" ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init - 2>/dev/null)" 2>/dev/null || true
+
+eval "$(starship init zsh)"
+
+export PNPM_HOME="$HOME/Library/pnpm"
+[[ -d "$PNPM_HOME" ]] && export PATH="$PNPM_HOME:$PATH"
 
 
 alias idea="open -na 'IntelliJ IDEA.app' --args '$@'"
 
-####
-# FNM automatically switches Node versions based on .nvmrc files
-# The --use-on-cd flag enables automatic switching when changing directories
-# No additional function needed - FNM handles this natively
-####
-
-# Run the above function in ZSH whenever you change directory
-# autoload -U add-zsh-hook
-# add-zsh-hook chpwd auto-switch-node-version
-# auto-switch-node-version
-
-export PYENV_ROOT="$HOME/.pyenv"
-[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
-
 [[ -e ~/.phpbrew/bashrc ]] && source ~/.phpbrew/bashrc
 
-
-# git aliases
 
 # Aliases
 alias g='git'
@@ -219,7 +178,7 @@ alias ggpnp='git pull origin $(current_branch) && git push origin $(current_bran
 compdef ggpnp=git
 alias dockerstop="ps ax|grep -i docker|egrep -iv 'grep|com.docker.vmnetd'|awk '{print $1}'|xargs kill"
 alias coffee="caffeinate -d -i -s -u"
-
+alias claude="claude --dangerously-skip-permissions"
 xcode-clean() {
   rm -rf ~/Library/Developer/Xcode/DerivedData
   rm -rf ~/Library/Developer/CoreSimulator/Caches
@@ -229,24 +188,17 @@ xcode-clean() {
 
 alias xcclean='xcode-clean'
 
-#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="$HOME/.sdkman"
-[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
-
-# bun completions
-[ -s "/Users/lukehowsam/.bun/_bun" ] && source "/Users/lukehowsam/.bun/_bun"
+sdk() { [[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]] && source "$SDKMAN_DIR/bin/sdkman-init.sh"; sdk "$@" }
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+[ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"
 
-export PATH="$PATH:/Applications/Docker.app/Contents/Resources/bin/"
-autoload -U +X bashcompinit && bashcompinit
-complete -o nospace -C /usr/local/bin/terragrunt terragrunt
-# The following lines have been added by Docker Desktop to enable Docker CLI completions.
-fpath=(/Users/lukehowsam/.docker/completions $fpath)
+export PATH="$PATH:/Applications/Docker.app/Contents/Resources/bin"
+fpath=("$HOME/.docker/completions" $fpath)
 autoload -Uz compinit
-compinit
-
-source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-source /Users/lukehowsam/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+compinit -C
+autoload -U +X bashcompinit && bashcompinit
+command -v terragrunt &>/dev/null && complete -o nospace -C terragrunt terragrunt
